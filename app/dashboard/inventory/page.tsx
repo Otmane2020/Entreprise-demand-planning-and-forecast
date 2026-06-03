@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MOCK_PRODUCTS } from '@/lib/mock-data';
+import { useAppData } from '@/lib/import-data-context';
 import { formatNumber, formatCurrency, getServiceLevelZ } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { KpiCard } from '@/components/kpi-card';
@@ -10,7 +10,6 @@ import { Package, AlertTriangle, Clock, Boxes, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { forecastApi } from '@/lib/forecast-api';
-import { generateSalesHistory } from '@/lib/mock-data';
 import { toast } from 'sonner';
 
 interface InventoryRecord {
@@ -42,27 +41,32 @@ export default function InventoryPage() {
   const [inventoryData, setInventoryData] = useState<InventoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { products, getSalesHistory, version } = useAppData();
+
   useEffect(() => {
     loadInventoryData();
-  }, []);
+  }, [version, products]);
 
   async function loadInventoryData() {
     setLoading(true);
     try {
       const data: InventoryRecord[] = [];
 
-      for (const p of MOCK_PRODUCTS) {
-        const sales = generateSalesHistory(p.sku, 12);
+      for (const p of products) {
+        const unitPrice = p.unit_price ?? 100;
+        const leadTime = p.lead_time_days ?? 14;
+        const serviceLevel = p.service_level_target ?? 95;
+        const sales = getSalesHistory(p.sku, 12);
         const units = sales.map(s => s.units_sold);
-        const avgMonthly = units.reduce((s, u) => s + u, 0) / units.length;
+        const avgMonthly = units.length ? units.reduce((s, u) => s + u, 0) / units.length : 0;
         const avgDaily = avgMonthly / 30;
-        const stdDev = Math.sqrt(units.reduce((s, u) => s + Math.pow(u - avgMonthly, 2), 0) / units.length);
-        const z = getServiceLevelZ(p.service_level_target);
+        const stdDev = Math.sqrt(units.reduce((s, u) => s + Math.pow(u - avgMonthly, 2), 0) / Math.max(units.length, 1));
+        const z = getServiceLevelZ(serviceLevel);
 
         try {
           const inv = await forecastApi.calculateInventory({
-            lead_time_days: p.lead_time_days,
-            service_level: p.service_level_target,
+            lead_time_days: leadTime,
+            service_level: serviceLevel,
             forecast_error: stdDev || avgMonthly * 0.12,
             average_daily_demand: avgDaily,
             current_stock: Math.round(avgMonthly * (0.8 + Math.random() * 1.4)),
@@ -76,37 +80,37 @@ export default function InventoryPage() {
           data.push({
             sku: p.sku,
             product_name: p.product_name,
-            unit_price: p.unit_price,
-            service_level_target: p.service_level_target,
-            lead_time_days: p.lead_time_days,
+            unit_price: unitPrice,
+            service_level_target: serviceLevel,
+            lead_time_days: leadTime,
             avgDaily,
             safetyStock: inv.safety_stock,
             rop: inv.reorder_point,
             currentStock,
             coverageDays: inv.coverage_days,
-            inventoryValue: currentStock * p.unit_price,
+            inventoryValue: currentStock * unitPrice,
             status,
             onOrder: Math.random() < 0.3 ? Math.round(avgMonthly * 0.5) : 0,
           });
         } catch (error) {
           // Fallback
-          const safetyStock = Math.round(z * stdDev * Math.sqrt(p.lead_time_days));
-          const rop = Math.round(avgDaily * p.lead_time_days + safetyStock);
+          const safetyStock = Math.round(z * stdDev * Math.sqrt(leadTime));
+          const rop = Math.round(avgDaily * leadTime + safetyStock);
           const currentStock = Math.round(avgMonthly * (0.8 + Math.random() * 1.4));
           const coverageDays = Math.round(currentStock / avgDaily);
 
           data.push({
             sku: p.sku,
             product_name: p.product_name,
-            unit_price: p.unit_price,
-            service_level_target: p.service_level_target,
-            lead_time_days: p.lead_time_days,
+            unit_price: unitPrice,
+            service_level_target: serviceLevel,
+            lead_time_days: leadTime,
             avgDaily,
             safetyStock,
             rop,
             currentStock,
             coverageDays,
-            inventoryValue: currentStock * p.unit_price,
+            inventoryValue: currentStock * unitPrice,
             status: currentStock < safetyStock ? 'critical' : coverageDays < 14 ? 'warning' : 'ok',
             onOrder: Math.random() < 0.3 ? Math.round(avgMonthly * 0.5) : 0,
           });

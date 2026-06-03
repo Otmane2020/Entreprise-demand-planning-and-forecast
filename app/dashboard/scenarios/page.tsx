@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { MOCK_PRODUCTS } from '@/lib/mock-data';
+import { useAppData } from '@/lib/import-data-context';
+import { useProductList } from '@/lib/use-product-list';
 import { formatNumber, formatCurrency, formatPercent } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ChartCard, ForecastVsActualChart } from '@/components/charts';
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FlaskConical, Play, Save, TrendingUp, TrendingDown, Package, DollarSign } from 'lucide-react';
-import { generateSalesHistory, generateForecastData } from '@/lib/mock-data';
+import { generateForecastData } from '@/lib/mock-data';
 import { forecastApi } from '@/lib/forecast-api';
 import { toast } from 'sonner';
 
@@ -36,7 +37,8 @@ interface ScenarioResult {
 
 export default function ScenariosPage() {
   const [scenarioType, setScenarioType] = useState<ScenarioType>('demand_increase');
-  const [selectedSku, setSelectedSku] = useState(MOCK_PRODUCTS[0].sku);
+  const { getSalesHistory, getForecastData } = useAppData();
+  const { products, selectedSku, setSelectedSku, product } = useProductList();
   const [demandChange, setDemandChange] = useState(10);
   const [leadTimeChange, setLeadTimeChange] = useState(7);
   const [promotionDuration, setPromotionDuration] = useState(4);
@@ -44,9 +46,13 @@ export default function ScenariosPage() {
   const [result, setResult] = useState<ScenarioResult | null>(null);
   const [scenarioName, setScenarioName] = useState('');
 
-  const product = MOCK_PRODUCTS.find(p => p.sku === selectedSku)!;
-  const sales = generateSalesHistory(selectedSku, 12);
-  const baseForecast = generateForecastData(sales, 6);
+  if (!product) {
+    return <div className="p-6 text-muted-foreground">Aucun produit — importez un CSV.</div>;
+  }
+
+  const activeProduct = product;
+  const sales = getSalesHistory(selectedSku, 12);
+  const baseForecast = getForecastData(selectedSku, 6);
   const baseUnits = baseForecast.reduce((s, f) => s + f.forecast_units, 0);
   const baseRevenue = baseForecast.reduce((s, f) => s + f.forecast_revenue, 0);
 
@@ -63,8 +69,8 @@ export default function ScenariosPage() {
         })),
         scenario_type: scenarioType,
         parameter: scenarioType === 'demand_increase' || scenarioType === 'demand_decrease' ? demandChange : leadTimeChange,
-        lead_time_days: product.lead_time_days,
-        service_level: product.service_level_target,
+        lead_time_days: activeProduct.lead_time_days ?? 14,
+        service_level: activeProduct.service_level_target ?? 95,
       });
 
       // Build chart data
@@ -147,7 +153,7 @@ export default function ScenariosPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {MOCK_PRODUCTS.map(p => (
+                  {products.map(p => (
                     <SelectItem key={p.sku} value={p.sku}>{p.sku} — {p.product_name}</SelectItem>
                   ))}
                 </SelectContent>

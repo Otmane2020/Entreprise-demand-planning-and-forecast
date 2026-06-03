@@ -10,6 +10,8 @@ export interface CatalogProduct {
   subcategory: string;
   source: 'mock' | 'import';
   unit_price?: number;
+  lead_time_days?: number;
+  service_level_target?: number;
   abc_class?: string | null;
   xyz_class?: string | null;
 }
@@ -37,6 +39,9 @@ function fromImports(): CatalogProduct[] {
     const family = row.family || row.category || 'Non classé';
     const subfamily = row.subfamily || row.subcategory || '';
     if (!bySku.has(row.sku)) {
+      const skuRows = rows.filter(r => r.sku === row.sku);
+      const totalUnits = skuRows.reduce((s, r) => s + r.units_sold, 0);
+      const totalRev = skuRows.reduce((s, r) => s + r.revenue, 0);
       bySku.set(row.sku, {
         sku: row.sku,
         product_name: row.product_name,
@@ -45,6 +50,11 @@ function fromImports(): CatalogProduct[] {
         category: family,
         subcategory: subfamily,
         source: 'import',
+        unit_price: totalUnits > 0 ? Math.round((totalRev / totalUnits) * 100) / 100 : 0,
+        lead_time_days: 14,
+        service_level_target: 95,
+        abc_class: null,
+        xyz_class: null,
       });
     }
   }
@@ -53,9 +63,8 @@ function fromImports(): CatalogProduct[] {
 
 export function getCatalogProducts(): CatalogProduct[] {
   const imported = fromImports();
-  const importedSkus = new Set(imported.map(p => p.sku));
-  const mock = fromMock().filter(p => !importedSkus.has(p.sku));
-  return [...imported, ...mock];
+  if (imported.length > 0) return imported;
+  return fromMock();
 }
 
 export function getFamilies(products: CatalogProduct[]): string[] {

@@ -1,7 +1,8 @@
 'use client';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getCatalogProducts, getFamilies, getSubfamilies } from '@/lib/product-catalog';
+import { getFamilies, getSubfamilies } from '@/lib/product-catalog';
+import { useAppData } from '@/lib/import-data-context';
 
 interface FamilyFiltersProps {
   family: string;
@@ -20,7 +21,7 @@ export function FamilyFilters({
   familyTriggerClass = 'w-44 h-8 text-sm',
   subfamilyTriggerClass = 'w-48 h-8 text-sm',
 }: FamilyFiltersProps) {
-  const products = getCatalogProducts();
+  const { products } = useAppData();
   const families = ['all', ...getFamilies(products)];
   const subfamilies = ['all', ...getSubfamilies(products, family)];
 

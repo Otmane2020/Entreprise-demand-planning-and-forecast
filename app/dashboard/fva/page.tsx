@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MOCK_PRODUCTS } from '@/lib/mock-data';
+import { useProductList } from '@/lib/use-product-list';
 import { formatPercent, formatNumber } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ChartCard } from '@/components/charts';
@@ -97,12 +97,14 @@ function generateSoPStages(sku: string): SoPStage[] {
 }
 
 export default function FVATrackingPage() {
-  const [selectedSku, setSelectedSku] = useState(MOCK_PRODUCTS[0].sku);
+  const { products, selectedSku, setSelectedSku, product } = useProductList();
   const [activeTab, setActiveTab] = useState('overview');
 
   const fvaData = generateFVAData(selectedSku);
   const sopStages = generateSoPStages(selectedSku);
-  const product = MOCK_PRODUCTS.find(p => p.sku === selectedSku)!;
+  if (!product) {
+    return <div className="p-6 text-muted-foreground">Aucun produit — importez un CSV.</div>;
+  }
 
   // FVA waterfall data
   const waterfallData = [
@@ -155,7 +157,7 @@ export default function FVATrackingPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {MOCK_PRODUCTS.map(p => (
+            {products.map(p => (
               <SelectItem key={p.sku} value={p.sku}>{p.sku} — {p.product_name}</SelectItem>
             ))}
           </SelectContent>

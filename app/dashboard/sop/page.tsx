@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { MOCK_PRODUCTS } from '@/lib/mock-data';
+import { useState, useEffect } from 'react';
+import { useAppData } from '@/lib/import-data-context';
 import { formatNumber, formatPercent } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ChartCard } from '@/components/charts';
@@ -33,22 +33,31 @@ interface SopRow {
   notes: string;
 }
 
-const INITIAL_DATA: SopRow[] = MOCK_PRODUCTS.map(p => {
-  const base = 200 + Math.random() * 600;
-  return {
-    sku: p.sku,
-    productName: p.product_name,
-    statistical: Math.round(base),
-    sales: Math.random() > 0.4 ? Math.round(base * (0.9 + Math.random() * 0.2)) : null,
-    consensus: null,
-    status: 'draft',
-    notes: '',
-  };
-});
-
 export default function SopPage() {
+  const { products, getSalesHistory, version } = useAppData();
   const [period, setPeriod] = useState('2025-03');
-  const [rows, setRows] = useState<SopRow[]>(INITIAL_DATA);
+  const [rows, setRows] = useState<SopRow[]>([]);
+
+  useEffect(() => {
+    setRows(
+      products.map(p => {
+        const history = getSalesHistory(p.sku);
+        const base =
+          history.length > 0
+            ? history[history.length - 1].units_sold
+            : Math.round(200 + Math.random() * 400);
+        return {
+          sku: p.sku,
+          productName: p.product_name,
+          statistical: Math.round(base),
+          sales: Math.round(base * (0.92 + Math.random() * 0.16)),
+          consensus: null,
+          status: 'draft' as SoipStatus,
+          notes: '',
+        };
+      })
+    );
+  }, [products, getSalesHistory, version]);
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
 
   function updateRow(sku: string, update: Partial<SopRow>) {

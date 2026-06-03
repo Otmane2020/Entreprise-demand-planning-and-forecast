@@ -1,11 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import {
-  getCatalogProducts,
-  filterCatalog,
-  type CatalogProduct,
-} from '@/lib/product-catalog';
+import { filterCatalog, type CatalogProduct } from '@/lib/product-catalog';
+import { useAppData } from '@/lib/import-data-context';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -31,12 +28,7 @@ export default function ProductsPage() {
   const [familyFilter, setFamilyFilter] = useState('all');
   const [subfamilyFilter, setSubfamilyFilter] = useState('all');
   const [abcFilter, setAbcFilter] = useState('all');
-  const [catalogVersion, setCatalogVersion] = useState(0);
-
-  const allProducts = useMemo(() => {
-    void catalogVersion;
-    return getCatalogProducts();
-  }, [catalogVersion]);
+  const { products: allProducts, refresh, hasImportedData } = useAppData();
 
   const filtered = useMemo(() => {
     let list = filterCatalog(allProducts, {
@@ -62,10 +54,11 @@ export default function ProductsPage() {
           <h1 className="text-xl font-bold">Produits</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {allProducts.length} SKU · {families} familles
+            {hasImportedData ? ' · données import' : ''}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => setCatalogVersion(v => v + 1)}>
+          <Button variant="outline" size="sm" className="gap-2" onClick={refresh}>
             Actualiser
           </Button>
           <Button variant="outline" size="sm" className="gap-2">

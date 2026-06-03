@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { isDemoMode } from '@/lib/demo-mode';
 import { saveLocalImport } from '@/lib/local-import-store';
+import { notifyImportUpdated } from '@/lib/import-data-context';
+import { runBatchForecasts } from '@/lib/run-batch-forecasts';
 import { ForecastPlanSelector } from '@/components/forecast-plan-selector';
 import {
   loadForecastPreferences,
@@ -48,6 +50,8 @@ export default function ImportPage() {
   const [validationErrors, setValidationErrors] = useState<CSVValidationError[]>([]);
   const [validatedRows, setValidatedRows] = useState<unknown[]>([]);
   const [importing, setImporting] = useState(false);
+  const [runningForecasts, setRunningForecasts] = useState(false);
+  const [batchSummary, setBatchSummary] = useState<string | null>(null);
 
   const handleFile = useCallback(async (fileObj: File) => {
     try {
@@ -121,7 +125,8 @@ export default function ImportPage() {
         const count = saveLocalImport(transformedRows);
         setStep('complete');
         saveForecastPreferences(forecastPrefs);
-        toast.success(`${count} lignes importées (stockage local — mode démo)`);
+        notifyImportUpdated();
+        toast.success(`${count} lignes importées — tous les onglets sont mis à jour`);
         setStep('complete');
         setImporting(false);
         return;
@@ -179,8 +184,9 @@ export default function ImportPage() {
       if (insertError) throw insertError;
 
       saveForecastPreferences(forecastPrefs);
+      notifyImportUpdated();
       setStep('complete');
-      toast.success(`${transformedRows.length} rows imported successfully`);
+      toast.success(`${transformedRows.length} lignes importées — tous les onglets sont mis à jour`);
     } catch (error) {
       toast.error(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setImporting(false);
@@ -194,6 +200,25 @@ export default function ImportPage() {
     setColumnMapping({});
     setValidationErrors([]);
     setValidatedRows([]);
+    setBatchSummary(null);
+  }
+
+  async function handleLaunchForecasts() {
+    saveForecastPreferences(forecastPrefs);
+    setRunningForecasts(true);
+    setBatchSummary(null);
+    try {
+      const results = await runBatchForecasts(forecastPrefs);
+      const ok = results.filter(r => !r.error).length;
+      setBatchSummary(`${ok}/${results.length} SKU prévus`);
+      notifyImportUpdated();
+      toast.success(`Prévisions terminées : ${ok}/${results.length} SKU`);
+      router.push('/dashboard/forecasting');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Échec des prévisions');
+    } finally {
+      setRunningForecasts(false);
+    }
   }
 
   const STEPS: { id: Step; label: string }[] = [
@@ -490,23 +515,38 @@ export default function ImportPage() {
             }}
           />
 
-          <div className="flex flex-wrap gap-2 justify-center pt-2">
+          {batchSummary && (
+            <p className="text-center text-sm text-emerald-400 font-medium">{batchSummary}</p>
+          )}
+
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 justify-center pt-2">
+            <Button
+              size="lg"
+              className="gap-2 w-full sm:w-auto order-first"
+              disabled={runningForecasts}
+              onClick={handleLaunchForecasts}
+            >
+              {runningForecasts ? (
+                <RotateCcw className="w-4 h-4 animate-spin" />
+              ) : (
+                <TrendingUp className="w-4 h-4" />
+              )}
+              {runningForecasts ? 'Prévisions en cours…' : 'Lancer les prévisions (tous les SKU)'}
+            </Button>
             <Button variant="outline" onClick={reset} className="gap-2">
               <Upload className="w-3.5 h-3.5" />
               Importer un autre fichier
             </Button>
             <Button
+              variant="secondary"
               className="gap-2"
               onClick={() => {
                 saveForecastPreferences(forecastPrefs);
-                router.push('/dashboard/forecasting');
+                notifyImportUpdated();
+                router.push('/dashboard');
               }}
             >
-              <TrendingUp className="w-3.5 h-3.5" />
-              Lancer les prévisions
-            </Button>
-            <Button variant="secondary" onClick={() => router.push('/dashboard')}>
-              Tableau de bord
+              Voir le tableau de bord
             </Button>
           </div>
         </div>

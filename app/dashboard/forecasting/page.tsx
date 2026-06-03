@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { generateSalesHistory, generateForecastData } from '@/lib/mock-data';
+import { generateForecastData } from '@/lib/mock-data';
 import { formatPercent } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ChartCard, ForecastVsActualChart } from '@/components/charts';
@@ -12,12 +12,8 @@ import { forecastApi } from '@/lib/forecast-api';
 import { toast } from 'sonner';
 import { FamilyFilters } from '@/components/family-filters';
 import { ForecastPlanSelector } from '@/components/forecast-plan-selector';
-import {
-  filterCatalog,
-  getCatalogProducts,
-  getImportedSalesForSku,
-  hasImportedSales,
-} from '@/lib/product-catalog';
+import { filterCatalog, hasImportedSales } from '@/lib/product-catalog';
+import { useAppData } from '@/lib/import-data-context';
 import {
   loadForecastPreferences,
   saveForecastPreferences,
@@ -41,7 +37,7 @@ interface ForecastState {
 }
 
 export default function ForecastingPage() {
-  const [catalogTick, setCatalogTick] = useState(0);
+  const { products: allProducts, getSalesHistory, version } = useAppData();
   const [familyFilter, setFamilyFilter] = useState('all');
   const [subfamilyFilter, setSubfamilyFilter] = useState('all');
   const [forecastPrefs, setForecastPrefs] = useState<ForecastPreferences>(loadForecastPreferences);
@@ -51,52 +47,30 @@ export default function ForecastingPage() {
   const [serviceStatus, setServiceStatus] = useState<'unknown' | 'ok' | 'error'>('unknown');
 
   const products = useMemo(() => {
-    void catalogTick;
-    return filterCatalog(getCatalogProducts(), {
+    void version;
+    return filterCatalog(allProducts, {
       family: familyFilter,
       subfamily: subfamilyFilter,
     });
-  }, [catalogTick, familyFilter, subfamilyFilter]);
+  }, [allProducts, version, familyFilter, subfamilyFilter]);
 
   useEffect(() => {
-    setForecastPrefs(loadForecastPreferences());
-  }, []);
-
-  useEffect(() => {
-    if (products.length && !products.some(p => p.sku === selectedSku)) {
+    if (products.length && (!selectedSku || !products.some(p => p.sku === selectedSku))) {
       setSelectedSku(products[0].sku);
     }
   }, [products, selectedSku]);
 
-  const product = products.find(p => p.sku === selectedSku) ?? products[0];
+  const product = products.find(p => p.sku === selectedSku);
 
   const sales = useMemo(() => {
     if (!product) return [];
-    if (hasImportedSales(product.sku)) {
-      const imported = getImportedSalesForSku(product.sku);
-      const points = imported.map(r => ({
-        date: r.date,
-        units_sold: r.units_sold,
-        revenue: r.revenue,
-        promotion_flag: r.promotion_flag,
-        stockout_flag: r.stockout_flag,
-      }));
-      return aggregateSalesHistory(points, forecastPrefs.granularity).map(p => ({
-        date: p.date,
-        units_sold: p.units_sold,
-        revenue: p.revenue,
-        promotion_flag: p.promotion_flag,
-        stockout_flag: p.stockout_flag,
-      }));
-    }
-    return generateSalesHistory(product.sku, 24);
-  }, [product, forecastPrefs.granularity]);
+    const raw = getSalesHistory(product.sku);
+    return aggregateSalesHistory(raw, forecastPrefs.granularity);
+  }, [product, getSalesHistory, forecastPrefs.granularity, version]);
 
   const horizonPeriods = horizonToPeriods(forecastPrefs.horizonMonths, forecastPrefs.granularity);
 
-  const forecasts = product
-    ? generateForecastData(sales, horizonPeriods)
-    : [];
+  const forecasts = product ? generateForecastData(sales, horizonPeriods) : [];
 
   useEffect(() => {
     forecastApi.health()
@@ -239,9 +213,6 @@ export default function ForecastingPage() {
           onFamilyChange={setFamilyFilter}
           onSubfamilyChange={setSubfamilyFilter}
         />
-        <Button variant="ghost" size="sm" onClick={() => setCatalogTick(t => t + 1)}>
-          Actualiser catalogue
-        </Button>
       </div>
 
       <div className="p-4 rounded-xl border bg-card">

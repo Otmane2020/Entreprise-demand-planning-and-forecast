@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { MOCK_PRODUCTS, generateSalesHistory, generateForecastData } from '@/lib/mock-data';
+import { useAppData } from '@/lib/import-data-context';
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ChartCard, ForecastVsActualChart } from '@/components/charts';
@@ -15,7 +15,8 @@ import {
 
 export default function ProductDetailPage() {
   const { sku } = useParams<{ sku: string }>();
-  const product = MOCK_PRODUCTS.find(p => p.sku === sku);
+  const { getProduct, getSalesHistory, getForecastData } = useAppData();
+  const product = getProduct(sku);
 
   if (!product) {
     return (
@@ -28,8 +29,8 @@ export default function ProductDetailPage() {
     );
   }
 
-  const sales = generateSalesHistory(sku, 24);
-  const forecasts = generateForecastData(sales, 6);
+  const sales = getSalesHistory(sku, 24);
+  const forecasts = getForecastData(sku, 6);
 
   const combined = [
     ...sales.slice(-12).map(s => ({
@@ -52,8 +53,9 @@ export default function ProductDetailPage() {
   const avgDaily = avgMonthly / 30;
   const forecastError = avgMonthly * 0.12;
   const zScore = 1.645;
-  const safetyStock = Math.round(zScore * forecastError * Math.sqrt(product.lead_time_days));
-  const rop = Math.round(avgDaily * product.lead_time_days + safetyStock);
+  const leadDays = product.lead_time_days ?? 14;
+  const safetyStock = Math.round(zScore * forecastError * Math.sqrt(leadDays));
+  const rop = Math.round(avgDaily * leadDays + safetyStock);
   const currentStock = Math.round(avgMonthly * 1.5);
   const coverageDays = Math.round(currentStock / avgDaily);
 
@@ -101,7 +103,9 @@ export default function ProductDetailPage() {
             </span>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            {product.brand} · {product.category} / {product.subcategory} · {formatCurrency(product.unit_price)} / unit
+            {product.family}
+            {product.subfamily ? ` / ${product.subfamily}` : ''}
+            {product.unit_price != null ? ` · ${formatCurrency(product.unit_price)} / unit` : ''}
           </p>
         </div>
       </div>
@@ -146,7 +150,7 @@ export default function ProductDetailPage() {
           value={formatNumber(rop)}
           status="blue"
           icon={<Shield className="w-4 h-4" />}
-          subtitle={`Lead time: ${product.lead_time_days}d`}
+          subtitle={`Lead time: ${leadDays}d`}
         />
       </div>
 
@@ -185,11 +189,11 @@ export default function ProductDetailPage() {
           <div className="mt-4 pt-4 border-t space-y-2">
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Service Level Target</span>
-              <span className="font-medium">{product.service_level_target}%</span>
+              <span className="font-medium">{product.service_level_target ?? 95}%</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Lead Time</span>
-              <span className="font-medium">{product.lead_time_days} days</span>
+              <span className="font-medium">{leadDays} days</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Avg Monthly Demand</span>

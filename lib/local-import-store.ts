@@ -23,6 +23,9 @@ export function saveLocalImport(rows: Omit<LocalSalesRow, 'imported_at'>[]): num
   const existing = loadLocalImports();
   const merged = [...existing, ...stamped];
   localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('demandiq-import-updated'));
+  }
   return stamped.length;
 }
 

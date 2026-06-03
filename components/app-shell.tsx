@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
+import { useAppData } from '@/lib/import-data-context';
+import { Database } from 'lucide-react';
 
 const NAV_ITEMS = [
   { label: 'Overview', icon: LayoutDashboard, href: '/dashboard', badge: null },
@@ -30,6 +32,25 @@ const NAV_ITEMS = [
   { label: 'Import', icon: Upload, href: '/dashboard/import', badge: null },
   { label: 'Reports', icon: FileText, href: '/dashboard/reports', badge: null },
 ];
+
+function ImportedDataBanner() {
+  const { hasImportedData, snapshot, source, refresh } = useAppData();
+  if (!hasImportedData) return null;
+  return (
+    <div className="px-4 py-2 border-b border-primary/20 bg-primary/10 flex flex-wrap items-center justify-between gap-2 text-sm">
+      <div className="flex items-center gap-2 text-primary">
+        <Database className="w-4 h-4 shrink-0" />
+        <span>
+          Données import actives — {snapshot?.rowCount ?? 0} lignes · {snapshot?.skuCount ?? 0} SKU
+          {source === 'import' ? ' (mobilier / CSV)' : ''}
+        </span>
+      </div>
+      <button type="button" onClick={refresh} className="text-xs underline text-primary hover:no-underline">
+        Actualiser tous les écrans
+      </button>
+    </div>
+  );
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, profile, signOut, loading } = useAuth();
@@ -187,8 +208,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
+        <main className="flex-1 overflow-y-auto flex flex-col">
+          <ImportedDataBanner />
+          <div className="flex-1 min-h-0">{children}</div>
         </main>
       </div>
     </div>

@@ -1,6 +1,8 @@
 'use client';
 
-import { MOCK_PRODUCTS, MOCK_ABC_DATA, MOCK_XYZ_DATA } from '@/lib/mock-data';
+import { useMemo } from 'react';
+import { useAppData } from '@/lib/import-data-context';
+import { getImportedSalesForSku } from '@/lib/product-catalog';
 import { formatCurrency, formatPercent, formatNumber } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ChartCard } from '@/components/charts';
@@ -13,36 +15,6 @@ import {
 
 const ABC_COLORS = { A: '#10b981', B: '#f59e0b', C: '#ef4444' };
 const XYZ_COLORS = { X: '#3b82f6', Y: '#f59e0b', Z: '#ef4444' };
-
-// ABC pareto data
-const PARETO_DATA = (() => {
-  const products = MOCK_PRODUCTS.map((p, i) => ({
-    sku: p.sku,
-    name: p.product_name,
-    revenue: (1000 - i * 60 + Math.random() * 40) * p.unit_price,
-    class: p.abc_class!,
-  })).sort((a, b) => b.revenue - a.revenue);
-  let cumulative = 0;
-  const total = products.reduce((s, p) => s + p.revenue, 0);
-  return products.map(p => {
-    cumulative += p.revenue;
-    return { ...p, cumulativePercent: (cumulative / total) * 100 };
-  });
-})();
-
-// ABC-XYZ Matrix
-const MATRIX_DATA: Record<string, { count: number; revenue: number; skus: string[] }> = {};
-['A', 'B', 'C'].forEach(abc => {
-  ['X', 'Y', 'Z'].forEach(xyz => {
-    const key = `${abc}${xyz}`;
-    const matching = MOCK_PRODUCTS.filter(p => p.abc_class === abc && p.xyz_class === xyz);
-    MATRIX_DATA[key] = {
-      count: matching.length,
-      revenue: matching.reduce((s, p) => s + p.unit_price * (500 + Math.random() * 300), 0),
-      skus: matching.map(p => p.sku),
-    };
-  });
-});
 
 const MATRIX_BG: Record<string, string> = {
   AX: 'bg-emerald-500/20 border-emerald-500/30',
@@ -57,12 +29,59 @@ const MATRIX_BG: Record<string, string> = {
 };
 
 export default function AnalysisPage() {
+  const { products, productMetrics, abcData, xyzData, hasImportedData } = useAppData();
+
+  const PARETO_DATA = useMemo(() => {
+    const items = products.map(p => {
+      const sales = getImportedSalesForSku(p.sku);
+      const revenue = sales.length
+        ? sales.reduce((s, r) => s + r.revenue, 0)
+        : (p.unit_price ?? 100) * 500;
+      const pm = productMetrics.find(m => m.sku === p.sku);
+      return {
+        sku: p.sku,
+        name: p.product_name,
+        revenue,
+        class: (pm?.abc_class as 'A' | 'B' | 'C') ?? 'C',
+      };
+    }).sort((a, b) => b.revenue - a.revenue);
+    let cumulative = 0;
+    const total = items.reduce((s, p) => s + p.revenue, 0) || 1;
+    return items.map(p => {
+      cumulative += p.revenue;
+      return { ...p, cumulativePercent: (cumulative / total) * 100 };
+    });
+  }, [products, productMetrics]);
+
+  const MATRIX_DATA = useMemo(() => {
+    const matrix: Record<string, { count: number; revenue: number; skus: string[] }> = {};
+    ['A', 'B', 'C'].forEach(abc => {
+      ['X', 'Y', 'Z'].forEach(xyz => {
+        const key = `${abc}${xyz}`;
+        const matching = productMetrics.filter(
+          m => m.abc_class === abc && m.xyz_class === xyz
+        );
+        matrix[key] = {
+          count: matching.length,
+          revenue: matching.reduce((s, m) => {
+            const sales = getImportedSalesForSku(m.sku);
+            return s + (sales.length ? sales.reduce((a, r) => a + r.revenue, 0) : 0);
+          }, 0),
+          skus: matching.map(m => m.sku),
+        };
+      });
+    });
+    return matrix;
+  }, [productMetrics]);
+
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold">ABC / XYZ Analysis</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Product segmentation by revenue contribution and demand variability</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {hasImportedData ? 'Segmentation depuis l\'import mobilier' : 'Product segmentation by revenue and variability'}
+          </p>
         </div>
         <Button variant="outline" size="sm" className="gap-2">
           <Download className="w-3.5 h-3.5" />
@@ -72,8 +91,8 @@ export default function AnalysisPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        {MOCK_ABC_DATA.flatMap(abc =>
-          MOCK_XYZ_DATA.map(xyz => {
+        {abcData.flatMap(abc =>
+          xyzData.map(xyz => {
             const key = `${abc.class}${xyz.class}`;
             const count = MATRIX_DATA[key]?.count ?? 0;
             return (
@@ -123,7 +142,7 @@ export default function AnalysisPage() {
         {/* XYZ Chart */}
         <ChartCard title="XYZ Demand Variability" subtitle="Products grouped by Coefficient of Variation (CV)">
           <div className="grid grid-cols-3 gap-3 mt-2">
-            {MOCK_XYZ_DATA.map(d => (
+            {xyzData.map(d => (
               <div key={d.class} className="rounded-lg p-4 border text-center" style={{ borderColor: d.color + '30', backgroundColor: d.color + '08' }}>
                 <div className="text-3xl font-bold mb-1" style={{ color: d.color }}>{d.products}</div>
                 <div className="text-lg font-bold" style={{ color: d.color }}>Class {d.class}</div>

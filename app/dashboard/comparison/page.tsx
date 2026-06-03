@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MOCK_PRODUCTS, generateSalesHistory } from '@/lib/mock-data';
+import { useAppData } from '@/lib/import-data-context';
+import { useProductList } from '@/lib/use-product-list';
 import { formatPercent, formatNumber } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ChartCard } from '@/components/charts';
@@ -132,7 +133,8 @@ const MODEL_CHARACTERISTICS: Record<string, ModelComparison> = {
 };
 
 export default function ModelComparisonPage() {
-  const [selectedSku, setSelectedSku] = useState(MOCK_PRODUCTS[0].sku);
+  const { getSalesHistory } = useAppData();
+  const { products, selectedSku, setSelectedSku, product } = useProductList();
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<{ models: ModelResult[]; best: string } | null>(null);
   const [serviceStatus, setServiceStatus] = useState<'ok' | 'error'>('error');
@@ -150,8 +152,8 @@ export default function ModelComparisonPage() {
   async function runBacktest() {
     setRunning(true);
     try {
-      const product = MOCK_PRODUCTS.find(p => p.sku === selectedSku)!;
-      const sales = generateSalesHistory(selectedSku, 36);
+      if (!product) return;
+      const sales = getSalesHistory(selectedSku, 36);
 
       const result = await forecastApi.runForecast({
         product_id: selectedSku,
@@ -193,7 +195,12 @@ export default function ModelComparisonPage() {
     }
   }
 
-  const product = MOCK_PRODUCTS.find(p => p.sku === selectedSku)!;
+  if (!product) {
+    return (
+      <div className="p-6 text-muted-foreground">Aucun produit — importez un fichier CSV.</div>
+    );
+  }
+
   const bestModel = results?.models.find(m => m.selected);
   const sortedModels = results?.models.sort((a, b) => a.mase - b.mase) || [];
 
@@ -246,7 +253,7 @@ export default function ModelComparisonPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {MOCK_PRODUCTS.map(p => (
+            {products.map(p => (
               <SelectItem key={p.sku} value={p.sku}>{p.sku} — {p.product_name}</SelectItem>
             ))}
           </SelectContent>
