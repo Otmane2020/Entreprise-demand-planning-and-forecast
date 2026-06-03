@@ -80,6 +80,7 @@ Use descriptive tmux session names when starting long-running processes, e.g. `n
 ### Gotchas
 
 - Dashboard routes redirect unauthenticated users to `/auth` (`components/app-shell.tsx`).
-- Forecast `POST /forecast` requires **at least 8** history points.
+- Forecast `POST /forecast` requires **at least 5** history points (sparse monthly series).
+- Sample furniture CSV: `forecast_engine/demo_furniture_sales.csv` — run `python3 forecast_engine/run_forecast_from_csv.py`.
 - `npm run lint` may fail on existing JSX quote rules; `npm run build` still succeeds.
 - Docker in this VM needs `sudo` for `docker` commands unless your user is in the `docker` group.
