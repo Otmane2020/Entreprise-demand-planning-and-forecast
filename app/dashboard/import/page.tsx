@@ -4,22 +4,42 @@ import { useState, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, FileText, CheckCircle, AlertCircle, ChevronRight, X, RotateCcw, Table, Zap } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, ChevronRight, X, RotateCcw, Table, Zap, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseCSVFile, suggestColumnMapping, validateData, transformRow, CSVValidationError } from '@/lib/csv-import';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { isDemoMode } from '@/lib/demo-mode';
 import { saveLocalImport } from '@/lib/local-import-store';
+import { ForecastPlanSelector } from '@/components/forecast-plan-selector';
+import {
+  loadForecastPreferences,
+  saveForecastPreferences,
+  type ForecastPreferences,
+  horizonToPeriods,
+} from '@/lib/forecast-settings';
+import { useRouter } from 'next/navigation';
 
 type Step = 'upload' | 'mapping' | 'validation' | 'preview' | 'complete';
 
-const EXPECTED_COLUMNS = ['Date', 'SKU', 'Product Name', 'Category', 'Units Sold', 'Revenue', 'Promotion Flag', 'Stockout Flag'];
+const EXPECTED_COLUMNS = [
+  'Date',
+  'SKU',
+  'Product Name',
+  'Famille',
+  'Sous-famille',
+  'Units Sold',
+  'Revenue',
+  'Promotion Flag',
+  'Stockout Flag',
+];
 const UNMAPPED = '__unmapped__';
 
 export default function ImportPage() {
   const { isDemo } = useAuth();
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [forecastPrefs, setForecastPrefs] = useState<ForecastPreferences>(() => loadForecastPreferences());
   const [step, setStep] = useState<Step>('upload');
   const [dragging, setDragging] = useState(false);
   const [file, setFile] = useState<{ name: string; rows: unknown[] } | null>(null);
@@ -100,7 +120,9 @@ export default function ImportPage() {
       if (isDemoMode() || isDemo) {
         const count = saveLocalImport(transformedRows);
         setStep('complete');
+        saveForecastPreferences(forecastPrefs);
         toast.success(`${count} lignes importées (stockage local — mode démo)`);
+        setStep('complete');
         setImporting(false);
         return;
       }
@@ -123,7 +145,8 @@ export default function ImportPage() {
             await supabase.from('products').insert({
               sku,
               product_name: (row as any).product_name,
-              category: (row as any).category,
+              category: (row as any).family ?? (row as any).category,
+              subcategory: (row as any).subfamily ?? (row as any).subcategory ?? '',
               unit_price: 0,
               user_id: user!.id,
             });
@@ -155,6 +178,7 @@ export default function ImportPage() {
 
       if (insertError) throw insertError;
 
+      saveForecastPreferences(forecastPrefs);
       setStep('complete');
       toast.success(`${transformedRows.length} rows imported successfully`);
     } catch (error) {
@@ -426,6 +450,15 @@ export default function ImportPage() {
             </div>
           </div>
 
+          <div className="rounded-xl border bg-card p-5">
+            <p className="text-sm font-semibold mb-3">Plan de prévision (après import)</p>
+            <ForecastPlanSelector value={forecastPrefs} onChange={setForecastPrefs} compact />
+            <p className="text-xs text-muted-foreground mt-3">
+              Horizon API : {horizonToPeriods(forecastPrefs.horizonMonths, forecastPrefs.granularity)} périodes (
+              {forecastPrefs.granularity})
+            </p>
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setStep('validation')}>Back</Button>
             <Button onClick={runImport} disabled={importing} className="gap-2">
@@ -438,18 +471,43 @@ export default function ImportPage() {
 
       {/* Step: Complete */}
       {step === 'complete' && (
-        <div className="rounded-xl border bg-card p-10 text-center">
-          <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-emerald-400" />
+        <div className="rounded-xl border bg-card p-8 space-y-6">
+          <div className="text-center">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Import réussi</h3>
+            <p className="text-muted-foreground">
+              {validatedRows.length} lignes importées · Choisissez l&apos;horizon et la granularité pour les prévisions
+            </p>
           </div>
-          <h3 className="text-lg font-bold mb-2">Import Successful</h3>
-          <p className="text-muted-foreground mb-6">{validatedRows.length} rows imported · All data stored · Forecasts ready to calculate</p>
-          <div className="flex gap-2 justify-center">
+
+          <ForecastPlanSelector
+            value={forecastPrefs}
+            onChange={prefs => {
+              setForecastPrefs(prefs);
+              saveForecastPreferences(prefs);
+            }}
+          />
+
+          <div className="flex flex-wrap gap-2 justify-center pt-2">
             <Button variant="outline" onClick={reset} className="gap-2">
               <Upload className="w-3.5 h-3.5" />
-              Import Another File
+              Importer un autre fichier
             </Button>
-            <Button>View Dashboard</Button>
+            <Button
+              className="gap-2"
+              onClick={() => {
+                saveForecastPreferences(forecastPrefs);
+                router.push('/dashboard/forecasting');
+              }}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              Lancer les prévisions
+            </Button>
+            <Button variant="secondary" onClick={() => router.push('/dashboard')}>
+              Tableau de bord
+            </Button>
           </div>
         </div>
       )}

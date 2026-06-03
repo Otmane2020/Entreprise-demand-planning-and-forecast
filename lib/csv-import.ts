@@ -10,6 +10,8 @@ const EXPECTED_COLUMNS = [
   { name: 'Date', aliases: ['date', 'day', 'timestamp', 'time', 'period', 'month'] },
   { name: 'SKU', aliases: ['sku', 'product_sku', 'code', 'productcode', 'item_code'] },
   { name: 'Product Name', aliases: ['product_name', 'product', 'name', 'description', 'item_name'] },
+  { name: 'Famille', aliases: ['famille', 'family', 'family_name', 'family_code', 'category', 'product_category', 'categorie'] },
+  { name: 'Sous-famille', aliases: ['sous_famille', 'sous-famille', 'sousfamille', 'subfamily', 'sub_family', 'subcategory', 'sub_category'] },
   { name: 'Category', aliases: ['category', 'product_category', 'type', 'class', 'segment'] },
   { name: 'Units Sold', aliases: ['units_sold', 'qty', 'quantity', 'units', 'sold_units', 'volume'] },
   { name: 'Revenue', aliases: ['revenue', 'sales', 'amount', 'total', 'sales_amount', 'total_revenue'] },
@@ -187,11 +189,21 @@ export function validateData(
   return { validRows, errors };
 }
 
+function mappedValue(row: Record<string, unknown>, mapping: Record<string, string>, key: string): string {
+  const col = mapping[key];
+  if (!col) return '';
+  const val = row[col];
+  return val == null ? '' : String(val).trim();
+}
+
 export function transformRow(row: Record<string, unknown>, mapping: Record<string, string>): {
   date: string;
   sku: string;
   product_name: string;
+  family: string;
+  subfamily: string;
   category: string;
+  subcategory: string;
   units_sold: number;
   revenue: number;
   promotion_flag: boolean;
@@ -200,11 +212,23 @@ export function transformRow(row: Record<string, unknown>, mapping: Record<strin
   const dateRaw = mapping['Date'] ? row[mapping['Date']] : '';
   const normalizedDate = normalizeDateValue(dateRaw) ?? String(dateRaw).trim();
 
+  const family =
+    mappedValue(row, mapping, 'Famille') ||
+    mappedValue(row, mapping, 'Category') ||
+    'Non classé';
+  const subfamily =
+    mappedValue(row, mapping, 'Sous-famille') ||
+    mappedValue(row, mapping, 'Category') ||
+    '';
+
   return {
     date: normalizedDate,
     sku: String(row[mapping['SKU']] || '').trim().toUpperCase(),
     product_name: String(row[mapping['Product Name']] || '').trim(),
-    category: String(row[mapping['Category']] || 'Uncategorized').trim(),
+    family,
+    subfamily,
+    category: family,
+    subcategory: subfamily,
     units_sold: Number(row[mapping['Units Sold']] || 0),
     revenue: Number(row[mapping['Revenue']] || 0),
     promotion_flag: parseBooleanFlag(row[mapping['Promotion Flag']]),

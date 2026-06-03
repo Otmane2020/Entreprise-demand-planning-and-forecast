@@ -1,21 +1,21 @@
-Date,SKU,Product,Category,Units_Sold,Revenue,Promotion_Flag,Stockout_Flag
-2024-01-01,CAN001,Canape Oslo 3 Places,Canape,18,16182,0,0
-2024-02-01,CAN001,Canape Oslo 3 Places,Canape,20,17980,0,0
-2024-03-01,CAN001,Canape Oslo 3 Places,Canape,22,19778,0,0
-2024-11-01,CAN001,Canape Oslo 3 Places,Canape,48,43152,1,0
-2024-12-01,CAN001,Canape Oslo 3 Places,Canape,52,46748,1,0
-2025-01-01,CAN001,Canape Oslo 3 Places,Canape,20,17980,0,0
-2025-11-01,CAN001,Canape Oslo 3 Places,Canape,55,49445,1,0
-2025-12-01,CAN001,Canape Oslo 3 Places,Canape,60,53940,1,0
-2024-01-01,TAB001,Table Chene Naturel,Table,45,17955,0,0
-2024-06-01,TAB001,Table Chene Naturel,Table,65,25935,0,0
-2024-11-01,TAB001,Table Chene Naturel,Table,95,37905,1,0
-2024-12-01,TAB001,Table Chene Naturel,Table,110,43890,1,0
-2025-06-01,TAB001,Table Chene Naturel,Table,72,28728,0,0
-2025-11-01,TAB001,Table Chene Naturel,Table,105,41895,1,0
-2025-12-01,TAB001,Table Chene Naturel,Table,125,49875,1,0
-2024-01-01,TV001,Meuble TV Scandinave,MeubleTV,12,3588,0,0
-2024-11-01,TV001,Meuble TV Scandinave,MeubleTV,26,7774,1,0
-2024-12-01,TV001,Meuble TV Scandinave,MeubleTV,30,8970,1,0
-2025-11-01,TV001,Meuble TV Scandinave,MeubleTV,29,8671,1,0
-2025-12-01,TV001,Meuble TV Scandinave,MeubleTV,34,10166,1,0
+Date,SKU,Product,Famille,Sous_Famille,Units_Sold,Revenue,Promotion_Flag,Stockout_Flag
+2024-01-01,CAN001,Canape Oslo 3 Places,Canape,Salon 3 places,18,16182,0,0
+2024-02-01,CAN001,Canape Oslo 3 Places,Canape,Salon 3 places,20,17980,0,0
+2024-03-01,CAN001,Canape Oslo 3 Places,Canape,Salon 3 places,22,19778,0,0
+2024-11-01,CAN001,Canape Oslo 3 Places,Canape,Salon 3 places,48,43152,1,0
+2024-12-01,CAN001,Canape Oslo 3 Places,Canape,Salon 3 places,52,46748,1,0
+2025-01-01,CAN001,Canape Oslo 3 Places,Canape,Salon 3 places,20,17980,0,0
+2025-11-01,CAN001,Canape Oslo 3 Places,Canape,Salon 3 places,55,49445,1,0
+2025-12-01,CAN001,Canape Oslo 3 Places,Canape,Salon 3 places,60,53940,1,0
+2024-01-01,TAB001,Table Chene Naturel,Table,Salle a manger,45,17955,0,0
+2024-06-01,TAB001,Table Chene Naturel,Table,Salle a manger,65,25935,0,0
+2024-11-01,TAB001,Table Chene Naturel,Table,Salle a manger,95,37905,1,0
+2024-12-01,TAB001,Table Chene Naturel,Table,Salle a manger,110,43890,1,0
+2025-06-01,TAB001,Table Chene Naturel,Table,Salle a manger,72,28728,0,0
+2025-11-01,TAB001,Table Chene Naturel,Table,Salle a manger,105,41895,1,0
+2025-12-01,TAB001,Table Chene Naturel,Table,Salle a manger,125,49875,1,0
+2024-01-01,TV001,Meuble TV Scandinave,MeubleTV,Salon media,12,3588,0,0
+2024-11-01,TV001,Meuble TV Scandinave,MeubleTV,Salon media,26,7774,1,0
+2024-12-01,TV001,Meuble TV Scandinave,MeubleTV,Salon media,30,8970,1,0
+2025-11-01,TV001,Meuble TV Scandinave,MeubleTV,Salon media,29,8671,1,0
+2025-12-01,TV001,Meuble TV Scandinave,MeubleTV,Salon media,34,10166,1,0

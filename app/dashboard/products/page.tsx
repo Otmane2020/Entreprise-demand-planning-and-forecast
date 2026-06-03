@@ -1,15 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { MOCK_PRODUCTS } from '@/lib/mock-data';
+import { useMemo, useState } from 'react';
+import {
+  getCatalogProducts,
+  filterCatalog,
+  type CatalogProduct,
+} from '@/lib/product-catalog';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, Download, ChevronRight, Plus } from 'lucide-react';
+import { Search, Download, ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { FamilyFilters } from '@/components/family-filters';
 
 const ABC_BADGE: Record<string, string> = {
   A: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -25,122 +28,122 @@ const XYZ_BADGE: Record<string, string> = {
 
 export default function ProductsPage() {
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [familyFilter, setFamilyFilter] = useState('all');
+  const [subfamilyFilter, setSubfamilyFilter] = useState('all');
   const [abcFilter, setAbcFilter] = useState('all');
+  const [catalogVersion, setCatalogVersion] = useState(0);
 
-  const categories = ['all', ...Array.from(new Set(MOCK_PRODUCTS.map(p => p.category)))];
+  const allProducts = useMemo(() => {
+    void catalogVersion;
+    return getCatalogProducts();
+  }, [catalogVersion]);
 
-  const filtered = MOCK_PRODUCTS.filter(p => {
-    const matchSearch = !search ||
-      p.product_name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase());
-    const matchCat = categoryFilter === 'all' || p.category === categoryFilter;
-    const matchAbc = abcFilter === 'all' || p.abc_class === abcFilter;
-    return matchSearch && matchCat && matchAbc;
-  });
+  const filtered = useMemo(() => {
+    let list = filterCatalog(allProducts, {
+      family: familyFilter,
+      subfamily: subfamilyFilter,
+      search,
+    });
+    if (abcFilter !== 'all') {
+      list = list.filter(p => p.abc_class === abcFilter);
+    }
+    return list;
+  }, [allProducts, familyFilter, subfamilyFilter, search, abcFilter]);
+
+  const families = useMemo(
+    () => new Set(allProducts.map(p => p.family)).size,
+    [allProducts]
+  );
 
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">Products</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{MOCK_PRODUCTS.length} SKUs across {categories.length - 1} categories</p>
+          <h1 className="text-xl font-bold">Produits</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {allProducts.length} SKU · {families} familles
+          </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => setCatalogVersion(v => v + 1)}>
+            Actualiser
+          </Button>
           <Button variant="outline" size="sm" className="gap-2">
             <Download className="w-3.5 h-3.5" />
             Export
           </Button>
           <Button size="sm" className="gap-2">
             <Plus className="w-3.5 h-3.5" />
-            Add Product
+            Ajouter
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-48 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search SKU or product name…"
+            placeholder="Rechercher SKU ou produit…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9 h-8 text-sm"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-40 h-8 text-sm">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map(c => (
-              <SelectItem key={c} value={c}>{c === 'all' ? 'All Categories' : c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={abcFilter} onValueChange={setAbcFilter}>
-          <SelectTrigger className="w-32 h-8 text-sm">
-            <SelectValue placeholder="ABC Class" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            <SelectItem value="A">Class A</SelectItem>
-            <SelectItem value="B">Class B</SelectItem>
-            <SelectItem value="C">Class C</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="text-sm text-muted-foreground">{filtered.length} results</span>
+        <FamilyFilters
+          family={familyFilter}
+          subfamily={subfamilyFilter}
+          onFamilyChange={setFamilyFilter}
+          onSubfamilyChange={setSubfamilyFilter}
+        />
+        <select
+          value={abcFilter}
+          onChange={e => setAbcFilter(e.target.value)}
+          className="h-8 text-sm rounded-md border border-input bg-background px-3"
+        >
+          <option value="all">Toutes classes ABC</option>
+          <option value="A">Classe A</option>
+          <option value="B">Classe B</option>
+          <option value="C">Classe C</option>
+        </select>
+        <span className="text-sm text-muted-foreground">{filtered.length} résultats</span>
       </div>
 
-      {/* Table */}
       <div className="rounded-xl border bg-card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/30">
               <th className="text-left px-4 py-3 font-medium text-muted-foreground">SKU</th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Category</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Unit Price</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Lead Time</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground hidden xl:table-cell">Service Level</th>
-              <th className="text-center px-4 py-3 font-medium text-muted-foreground">ABC</th>
-              <th className="text-center px-4 py-3 font-medium text-muted-foreground">XYZ</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Produit</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Famille</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Sous-famille</th>
+              <th className="text-right px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Prix</th>
+              <th className="text-center px-4 py-3 font-medium text-muted-foreground">Source</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
-            {filtered.map((product, idx) => (
+            {filtered.map((product: CatalogProduct, idx) => (
               <tr
                 key={product.sku}
-                className={cn('border-b last:border-0 hover:bg-muted/20 transition-colors', idx % 2 === 0 ? '' : 'bg-muted/5')}
+                className={cn('border-b last:border-0 hover:bg-muted/20 transition-colors', idx % 2 === 1 && 'bg-muted/5')}
               >
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground font-medium">{product.sku}</td>
-                <td className="px-4 py-3">
-                  <div className="font-medium text-foreground">{product.product_name}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{product.brand}</div>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                  <div>{product.category}</div>
-                  <div className="text-xs text-muted-foreground/70">{product.subcategory}</div>
-                </td>
-                <td className="px-4 py-3 text-right font-medium hidden lg:table-cell">
-                  {formatCurrency(product.unit_price)}
-                </td>
-                <td className="px-4 py-3 text-right text-muted-foreground hidden lg:table-cell">
-                  {product.lead_time_days}d
-                </td>
-                <td className="px-4 py-3 text-right text-muted-foreground hidden xl:table-cell">
-                  {product.service_level_target}%
+                <td className="px-4 py-3 font-medium">{product.product_name}</td>
+                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{product.family}</td>
+                <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">{product.subfamily || '—'}</td>
+                <td className="px-4 py-3 text-right hidden lg:table-cell">
+                  {product.unit_price != null ? formatCurrency(product.unit_price) : '—'}
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <span className={cn('inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold border', ABC_BADGE[product.abc_class ?? 'C'])}>
-                    {product.abc_class}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <span className={cn('inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold border', XYZ_BADGE[product.xyz_class ?? 'Z'])}>
-                    {product.xyz_class}
+                  <span
+                    className={cn(
+                      'text-xs px-2 py-0.5 rounded-full border',
+                      product.source === 'import'
+                        ? 'bg-primary/10 text-primary border-primary/20'
+                        : 'bg-muted text-muted-foreground border-border'
+                    )}
+                  >
+                    {product.source === 'import' ? 'Import' : 'Démo'}
                   </span>
                 </td>
                 <td className="px-4 py-3">

@@ -2,7 +2,10 @@ export interface LocalSalesRow {
   date: string;
   sku: string;
   product_name: string;
+  family: string;
+  subfamily: string;
   category: string;
+  subcategory: string;
   units_sold: number;
   revenue: number;
   promotion_flag: boolean;
@@ -28,7 +31,14 @@ export function loadLocalImports(): LocalSalesRow[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as LocalSalesRow[];
+    const rows = JSON.parse(raw) as LocalSalesRow[];
+    return rows.map(row => ({
+      ...row,
+      family: row.family ?? row.category ?? 'Non classé',
+      subfamily: row.subfamily ?? row.subcategory ?? '',
+      category: row.category ?? row.family ?? 'Non classé',
+      subcategory: row.subcategory ?? row.subfamily ?? '',
+    }));
   } catch {
     return [];
   }
