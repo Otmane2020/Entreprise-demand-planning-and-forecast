@@ -6,7 +6,7 @@ Implements 15 production-grade forecasting models with automatic model selection
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
@@ -19,8 +19,6 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.holtwinters import ExponentialSmoothing, SimpleExpSmoothing, Holt
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from statsmodels.tsa.arima.utils import ndiffs
-
 # ML models
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
@@ -82,7 +80,7 @@ class ForecastOutput(BaseModel):
     confidence_lower: List[float]
     confidence_upper: List[float]
     model_performance: Dict[str, BacktestResult]
-    training_info: Dict[str, any]
+    training_info: Dict[str, Any]
 
 class ModelTraining(BaseModel):
     product_id: str
