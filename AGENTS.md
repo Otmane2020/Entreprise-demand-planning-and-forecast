@@ -26,7 +26,14 @@ NEXT_PUBLIC_FORECAST_API=http://localhost:8000
 
 Without real Supabase credentials, `/auth` works but sign-in and `/dashboard` (auth-guarded) will not.
 
-Apply SQL migrations from `supabase/migrations/` via the Supabase dashboard or `supabase db push`.
+**If Supabase secrets are skipped in Cloud setup**, you can still verify the environment with:
+
+- `npm run typecheck` and `npm run build`
+- `npm run dev` → open `http://localhost:3000/auth` (UI shell)
+- Forecast engine `curl -s http://localhost:8000/health` and `POST /forecast` (see README)
+- Most dashboard pages use `lib/mock-data.ts`, but the app shell blocks `/dashboard/*` until a user signs in via Supabase
+
+Apply SQL migrations from `supabase/migrations/` via the Supabase dashboard or `supabase db push` when credentials are available.
 
 ### Forecast engine (important)
 
