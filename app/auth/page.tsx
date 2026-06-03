@@ -10,9 +10,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, TrendingUp, Package, Users, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { isDemoMode } from '@/lib/demo-mode';
 
 export default function AuthPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signInDemo } = useAuth();
+  const demoMode = isDemoMode();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,11 +29,25 @@ export default function AuthPage() {
     const { error } = await signIn(signInData.email, signInData.password);
     if (error) {
       setError(error.message);
-      setLoading(false);
     } else {
       toast.success('Welcome back!');
       router.push('/dashboard');
     }
+    setLoading(false);
+  }
+
+  async function handleDemoSignIn() {
+    setLoading(true);
+    setError('');
+    const { error } = await signInDemo();
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+    toast.success('Mode démo activé');
+    router.push('/dashboard');
+    setLoading(false);
   }
 
   async function handleSignUp(e: React.FormEvent) {
@@ -151,12 +167,29 @@ export default function AuthPage() {
                       />
                     </div>
                   </CardContent>
-                  <CardFooter>
+                  <CardFooter className="flex flex-col gap-2">
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? 'Signing in…' : 'Sign In'}
                     </Button>
+                    {demoMode && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        disabled={loading}
+                        onClick={handleDemoSignIn}
+                      >
+                        Connexion démo (sans Supabase)
+                      </Button>
+                    )}
                   </CardFooter>
                 </form>
+                {demoMode && (
+                  <p className="text-xs text-muted-foreground px-6 pb-4 -mt-2">
+                    Compte démo : <span className="font-mono">{`demo@demandiq.local`}</span> /{' '}
+                    <span className="font-mono">demo1234</span>
+                  </p>
+                )}
               </Card>
             </TabsContent>
 

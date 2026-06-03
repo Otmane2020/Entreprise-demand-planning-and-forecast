@@ -24,7 +24,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 NEXT_PUBLIC_FORECAST_API=http://localhost:8000
 ```
 
-Without real Supabase credentials, `/auth` works but sign-in and `/dashboard` (auth-guarded) will not.
+Without real Supabase credentials, enable demo mode in `.env.local`:
+
+```bash
+NEXT_PUBLIC_ENABLE_DEMO_AUTH=true
+```
+
+Then use **Connexion démo** on `/auth` (or `demo@demandiq.local` / `demo1234`). CSV import in demo mode saves to `localStorage` via `lib/local-import-store.ts`.
 
 **If Supabase secrets are skipped in Cloud setup**, you can still verify the environment with:
 

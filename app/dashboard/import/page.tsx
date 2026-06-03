@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,12 +8,18 @@ import { Upload, FileText, CheckCircle, AlertCircle, ChevronRight, X, RotateCcw,
 import { toast } from 'sonner';
 import { parseCSVFile, suggestColumnMapping, validateData, transformRow, CSVValidationError } from '@/lib/csv-import';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth-context';
+import { isDemoMode } from '@/lib/demo-mode';
+import { saveLocalImport } from '@/lib/local-import-store';
 
 type Step = 'upload' | 'mapping' | 'validation' | 'preview' | 'complete';
 
 const EXPECTED_COLUMNS = ['Date', 'SKU', 'Product Name', 'Category', 'Units Sold', 'Revenue', 'Promotion Flag', 'Stockout Flag'];
+const UNMAPPED = '__unmapped__';
 
 export default function ImportPage() {
+  const { isDemo } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>('upload');
   const [dragging, setDragging] = useState(false);
   const [file, setFile] = useState<{ name: string; rows: unknown[] } | null>(null);
@@ -23,14 +29,7 @@ export default function ImportPage() {
   const [validatedRows, setValidatedRows] = useState<unknown[]>([]);
   const [importing, setImporting] = useState(false);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    const dropped = e.dataTransfer.files[0];
-    if (dropped) handleFile(dropped);
-  }, []);
-
-  async function handleFile(fileObj: File) {
+  const handleFile = useCallback(async (fileObj: File) => {
     try {
       const ext = fileObj.name.split('.').pop()?.toLowerCase();
       if (!['csv', 'xlsx', 'xls'].includes(ext ?? '')) {
@@ -55,11 +54,26 @@ export default function ImportPage() {
     } catch (error) {
       toast.error(`Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(false);
+      const dropped = e.dataTransfer.files[0];
+      if (dropped) void handleFile(dropped);
+    },
+    [handleFile]
+  );
+
+  function openFilePicker() {
+    fileInputRef.current?.click();
   }
 
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    if (f) handleFile(f);
+    if (f) void handleFile(f);
+    e.target.value = '';
   }
 
   function runValidation() {
@@ -79,14 +93,20 @@ export default function ImportPage() {
 
     setImporting(true);
     try {
+      const transformedRows = (validatedRows as Record<string, unknown>[]).map(row =>
+        transformRow(row, columnMapping)
+      );
+
+      if (isDemoMode() || isDemo) {
+        const count = saveLocalImport(transformedRows);
+        setStep('complete');
+        toast.success(`${count} lignes importées (stockage local — mode démo)`);
+        setImporting(false);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-
-      // Transform rows
-      const transformedRows = validatedRows.map((row: any) => {
-        const transformed = transformRow(row, columnMapping);
-        return { ...transformed, user_id: user.id };
-      });
 
       // Check/create products
       const uniqueSkus = Array.from(new Set(transformedRows.map(r => r.sku)));
@@ -198,6 +218,8 @@ export default function ImportPage() {
       {/* Step: Upload */}
       {step === 'upload' && (
         <div
+          role="button"
+          tabIndex={0}
           className={cn(
             'rounded-xl border-2 border-dashed p-12 text-center transition-colors cursor-pointer',
             dragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/20'
@@ -205,14 +227,32 @@ export default function ImportPage() {
           onDragOver={e => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
+          onClick={openFilePicker}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFilePicker(); } }}
         >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            className="sr-only"
+            onChange={handleFileInput}
+          />
           <Upload className={cn('w-10 h-10 mx-auto mb-4', dragging ? 'text-primary' : 'text-muted-foreground')} />
           <h3 className="text-base font-semibold mb-2">Drop your file here</h3>
           <p className="text-sm text-muted-foreground mb-4">Supports CSV, XLSX, XLS — up to 100MB</p>
-          <label>
-            <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileInput} />
-            <Button variant="outline" className="cursor-pointer">Browse Files</Button>
-          </label>
+          <Button
+            type="button"
+            variant="outline"
+            className="cursor-pointer"
+            onClick={e => { e.stopPropagation(); openFilePicker(); }}
+          >
+            Browse Files
+          </Button>
+          {(isDemoMode() || isDemo) && (
+            <p className="text-xs text-amber-400/90 mt-4 max-w-md mx-auto">
+              Mode démo : l&apos;import est enregistré localement dans le navigateur (pas Supabase).
+            </p>
+          )}
 
           <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-xl mx-auto">
             {EXPECTED_COLUMNS.map(col => (
@@ -247,11 +287,22 @@ export default function ImportPage() {
                 <div key={col} className="flex items-center gap-3">
                   <div className="w-40 text-sm font-medium shrink-0">{col}</div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <Select value={columnMapping[col] || ''} onValueChange={v => setColumnMapping(p => ({ ...p, [col]: v }))}>
+                  <Select
+                    value={columnMapping[col] ?? UNMAPPED}
+                    onValueChange={v =>
+                      setColumnMapping(p => {
+                        const next = { ...p };
+                        if (v === UNMAPPED) delete next[col];
+                        else next[col] = v;
+                        return next;
+                      })
+                    }
+                  >
                     <SelectTrigger className="flex-1 h-8 text-sm">
                       <SelectValue placeholder="Select column…" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value={UNMAPPED}>— Non mappé —</SelectItem>
                       {fileColumns.map(fc => (
                         <SelectItem key={fc} value={fc}>{fc}</SelectItem>
                       ))}

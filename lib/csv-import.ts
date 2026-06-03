@@ -64,6 +64,33 @@ export function suggestColumnMapping(csvColumns: string[]): Record<string, strin
   return mapping;
 }
 
+function normalizeDateValue(value: unknown): string | null {
+  if (value == null || value === '') return null;
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const parsed = (XLSX.SSF as { parse_date_code?: (n: number) => { y: number; m: number; d: number } })
+      .parse_date_code?.(value);
+    if (parsed) {
+      const mm = String(parsed.m).padStart(2, '0');
+      const dd = String(parsed.d).padStart(2, '0');
+      return `${parsed.y}-${mm}-${dd}`;
+    }
+  }
+
+  const raw = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+
+  const d = new Date(raw);
+  if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+
+  return null;
+}
+
+function parseBooleanFlag(value: unknown): boolean {
+  const s = String(value ?? '').trim().toLowerCase();
+  return s === 'true' || s === '1' || s === 'yes' || s === 'y';
+}
+
 export async function parseCSVFile(file: File): Promise<{ columns: string[]; rows: Record<string, unknown>[] }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -73,21 +100,22 @@ export async function parseCSVFile(file: File): Promise<{ columns: string[]; row
         const data = e.target?.result;
         if (!data) throw new Error('Failed to read file');
 
-        const workbook = XLSX.read(data, { type: 'binary' });
+        const workbook = XLSX.read(data, { type: 'array' });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         if (!sheet) throw new Error('No sheet found');
 
-        const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet);
-        const columns = Object.keys(rows[0] || {});
+        const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+        if (rows.length === 0) throw new Error('No data rows found');
 
+        const columns = Object.keys(rows[0] || {});
         resolve({ columns, rows });
       } catch (error) {
-        reject(error);
+        reject(error instanceof Error ? error : new Error('Failed to parse file'));
       }
     };
 
     reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
   });
 }
 
@@ -104,13 +132,12 @@ export function validateData(
 
     // Validate Date
     const dateCol = mapping['Date'];
-    if (dateCol && row[dateCol]) {
-      const dateStr = String(row[dateCol]).trim();
-      if (!/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+    if (dateCol && row[dateCol] !== '' && row[dateCol] != null) {
+      if (!normalizeDateValue(row[dateCol])) {
         errors.push({
           row: i + 2,
           column: 'Date',
-          message: 'Invalid date format (expected YYYY-MM-DD)',
+          message: 'Invalid date (use YYYY-MM-DD or a standard date format)',
           severity: 'error',
         });
         hasError = true;
@@ -170,14 +197,17 @@ export function transformRow(row: Record<string, unknown>, mapping: Record<strin
   promotion_flag: boolean;
   stockout_flag: boolean;
 } {
+  const dateRaw = mapping['Date'] ? row[mapping['Date']] : '';
+  const normalizedDate = normalizeDateValue(dateRaw) ?? String(dateRaw).trim();
+
   return {
-    date: String(row[mapping['Date']] || '').trim(),
+    date: normalizedDate,
     sku: String(row[mapping['SKU']] || '').trim().toUpperCase(),
     product_name: String(row[mapping['Product Name']] || '').trim(),
-    category: String(row[mapping['Category']] || '').trim(),
+    category: String(row[mapping['Category']] || 'Uncategorized').trim(),
     units_sold: Number(row[mapping['Units Sold']] || 0),
     revenue: Number(row[mapping['Revenue']] || 0),
-    promotion_flag: String(row[mapping['Promotion Flag']] || 'false').toLowerCase() === 'true',
-    stockout_flag: String(row[mapping['Stockout Flag']] || 'false').toLowerCase() === 'true',
+    promotion_flag: parseBooleanFlag(row[mapping['Promotion Flag']]),
+    stockout_flag: parseBooleanFlag(row[mapping['Stockout Flag']]),
   };
 }
