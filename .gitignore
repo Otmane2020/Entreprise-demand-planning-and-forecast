@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python (forecast engine)
+forecast_engine/.venv/
+forecast_engine/__pycache__/
+**/__pycache__/
+*.pyc
