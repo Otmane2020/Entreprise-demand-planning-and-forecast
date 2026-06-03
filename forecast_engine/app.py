@@ -453,8 +453,8 @@ def health():
 async def forecast(request: ForecastRequest):
     """Run all 15 models, auto-select best by MASE"""
     try:
-        if not request.history or len(request.history) < 8:
-            raise ValueError("Need at least 8 historical data points")
+        if not request.history or len(request.history) < 5:
+            raise ValueError("Need at least 5 historical data points")
 
         # Parse history
         data = np.array([h.units for h in request.history])
