@@ -1,0 +1,96 @@
+sku,product_name,category,subcategory,brand,unit_price,lead_time_days,abc_class,xyz_class
+EL-001,Wireless Headphones Pro,Electronics,Audio,SoundCore,149.99,14,A,X
+EL-002,Smart Watch Series 5,Electronics,Wearables,TechFit,299.99,21,A,Y
+EL-003,Bluetooth Speaker Mini,Electronics,Audio,SoundCore,79.99,10,B,X
+AP-001,Performance Running Shoes,Apparel,Footwear,StepFast,119.99,30,A,Y
+FB-001,Premium Coffee Blend,Food & Beverage,Coffee,BeanMaster,24.99,7,A,X
+EL-1000,Electronics Product 1,Electronics,Budget,TechCorp,60.48,19,A,X
+EL-1001,Electronics Product 2,Electronics,Professional,TechCorp,49.42,26,A,Y
+EL-1002,Electronics Product 3,Electronics,Standard,TechCorp,110.49,25,A,Y
+EL-1003,Electronics Product 4,Electronics,Casual,TechCorp,67.81,13,A,X
+EL-1004,Electronics Product 5,Electronics,Budget,TechCorp,155.45,15,A,Y
+EL-1005,Electronics Product 6,Electronics,Standard,TechCorp,70.79,10,A,Y
+EL-1006,Electronics Product 7,Electronics,Budget,TechCorp,82.15,14,A,X
+EL-1007,Electronics Product 8,Electronics,Budget,TechCorp,227.19,14,B,X
+EL-1008,Electronics Product 9,Electronics,Professional,TechCorp,61.31,19,A,Z
+EL-1009,Electronics Product 10,Electronics,Professional,TechCorp,213.78,7,A,Z
+EL-1010,Electronics Product 11,Electronics,Casual,TechCorp,160.38,16,A,Z
+EL-1011,Electronics Product 12,Electronics,Casual,TechCorp,213.58,18,A,Y
+EL-1012,Electronics Product 13,Electronics,Professional,TechCorp,167.28,7,A,X
+EL-1013,Electronics Product 14,Electronics,Budget,TechCorp,30.83,34,A,Z
+EL-1014,Electronics Product 15,Electronics,Casual,TechCorp,226.61,22,B,Z
+AP-1015,Apparel Product 1,Apparel,Professional,StyleMax,254.91,20,A,Y
+AP-1016,Apparel Product 2,Apparel,Budget,StyleMax,233.3,19,A,X
+AP-1017,Apparel Product 3,Apparel,Budget,StyleMax,92.01,5,A,X
+AP-1018,Apparel Product 4,Apparel,Premium,StyleMax,215.05,8,A,Z
+AP-1019,Apparel Product 5,Apparel,Professional,StyleMax,93.53,32,A,Y
+AP-1020,Apparel Product 6,Apparel,Casual,StyleMax,192.73,19,B,Y
+AP-1021,Apparel Product 7,Apparel,Casual,StyleMax,68.68,15,C,X
+AP-1022,Apparel Product 8,Apparel,Standard,StyleMax,148.26,10,A,X
+AP-1023,Apparel Product 9,Apparel,Professional,StyleMax,154.42,18,A,X
+AP-1024,Apparel Product 10,Apparel,Standard,StyleMax,104.47,11,A,Z
+AP-1025,Apparel Product 11,Apparel,Casual,StyleMax,85.26,9,A,Y
+AP-1026,Apparel Product 12,Apparel,Standard,StyleMax,220.37,34,A,Y
+AP-1027,Apparel Product 13,Apparel,Standard,StyleMax,249.66,27,A,X
+AP-1028,Apparel Product 14,Apparel,Budget,StyleMax,165.07,19,B,X
+AP-1029,Apparel Product 15,Apparel,Casual,StyleMax,102.56,15,C,Z
+FO-1030,Food & Beverage Product 1,Food & Beverage,Budget,NutriHub,256.87,26,A,X
+FO-1031,Food & Beverage Product 2,Food & Beverage,Professional,NutriHub,230.84,33,A,Y
+FO-1032,Food & Beverage Product 3,Food & Beverage,Professional,NutriHub,240.88,11,A,Y
+FO-1033,Food & Beverage Product 4,Food & Beverage,Casual,NutriHub,225.84,31,A,Z
+FO-1034,Food & Beverage Product 5,Food & Beverage,Professional,NutriHub,48.07,17,B,Y
+FO-1035,Food & Beverage Product 6,Food & Beverage,Standard,NutriHub,128.34,32,C,Z
+FO-1036,Food & Beverage Product 7,Food & Beverage,Standard,NutriHub,53.08,26,A,Y
+FO-1037,Food & Beverage Product 8,Food & Beverage,Casual,NutriHub,188.65,17,A,Z
+FO-1038,Food & Beverage Product 9,Food & Beverage,Premium,NutriHub,116.44,15,A,Z
+FO-1039,Food & Beverage Product 10,Food & Beverage,Casual,NutriHub,133.28,34,A,Y
+FO-1040,Food & Beverage Product 11,Food & Beverage,Standard,NutriHub,31.94,5,A,Z
+FO-1041,Food & Beverage Product 12,Food & Beverage,Casual,NutriHub,69.19,7,A,Y
+FO-1042,Food & Beverage Product 13,Food & Beverage,Professional,NutriHub,50.31,27,B,X
+FO-1043,Food & Beverage Product 14,Food & Beverage,Premium,NutriHub,244.08,17,A,Y
+FO-1044,Food & Beverage Product 15,Food & Beverage,Standard,NutriHub,240.1,30,A,Y
+HO-1045,Home & Garden Product 1,Home & Garden,Professional,HomeFlow,204.79,24,A,Z
+HO-1046,Home & Garden Product 2,Home & Garden,Premium,HomeFlow,243.42,26,A,Y
+HO-1047,Home & Garden Product 3,Home & Garden,Budget,HomeFlow,96.6,5,A,X
+HO-1048,Home & Garden Product 4,Home & Garden,Premium,HomeFlow,140.96,30,B,X
+HO-1049,Home & Garden Product 5,Home & Garden,Professional,HomeFlow,55.24,6,A,X
+HO-1050,Home & Garden Product 6,Home & Garden,Standard,HomeFlow,53.96,18,A,X
+HO-1051,Home & Garden Product 7,Home & Garden,Budget,HomeFlow,203.22,10,A,Z
+HO-1052,Home & Garden Product 8,Home & Garden,Casual,HomeFlow,252.88,20,A,Z
+HO-1053,Home & Garden Product 9,Home & Garden,Professional,HomeFlow,80.29,16,A,Z
+HO-1054,Home & Garden Product 10,Home & Garden,Standard,HomeFlow,107.06,18,A,X
+HO-1055,Home & Garden Product 11,Home & Garden,Casual,HomeFlow,98.37,28,B,X
+HO-1056,Home & Garden Product 12,Home & Garden,Professional,HomeFlow,96.36,25,B,Y
+HO-1057,Home & Garden Product 13,Home & Garden,Budget,HomeFlow,221.32,27,A,Z
+HO-1058,Home & Garden Product 14,Home & Garden,Budget,HomeFlow,189.84,24,A,Z
+HO-1059,Home & Garden Product 15,Home & Garden,Professional,HomeFlow,256.29,22,A,Z
+SP-1060,Sports Product 1,Sports,Budget,AthleteZone,39.94,6,A,X
+SP-1061,Sports Product 2,Sports,Premium,AthleteZone,189.53,27,B,Z
+SP-1062,Sports Product 3,Sports,Standard,AthleteZone,227.21,18,B,X
+SP-1063,Sports Product 4,Sports,Budget,AthleteZone,143.1,7,A,X
+SP-1064,Sports Product 5,Sports,Casual,AthleteZone,88.72,26,A,X
+SP-1065,Sports Product 6,Sports,Budget,AthleteZone,140.72,25,A,Z
+SP-1066,Sports Product 7,Sports,Budget,AthleteZone,157.21,17,A,Y
+SP-1067,Sports Product 8,Sports,Premium,AthleteZone,218.17,16,A,X
+SP-1068,Sports Product 9,Sports,Premium,AthleteZone,150.92,26,A,Y
+SP-1069,Sports Product 10,Sports,Budget,AthleteZone,167.87,26,B,Z
+SP-1070,Sports Product 11,Sports,Casual,AthleteZone,173.19,14,C,Z
+SP-1071,Sports Product 12,Sports,Premium,AthleteZone,37.31,17,A,X
+SP-1072,Sports Product 13,Sports,Budget,AthleteZone,272.5,12,A,Z
+SP-1073,Sports Product 14,Sports,Professional,AthleteZone,182.47,14,A,X
+SP-1074,Sports Product 15,Sports,Casual,AthleteZone,119.58,10,A,Z
+AU-1075,Automotive Product 1,Automotive,Professional,AutoPro,39.63,9,B,X
+AU-1076,Automotive Product 2,Automotive,Casual,AutoPro,247.21,6,C,Y
+AU-1077,Automotive Product 3,Automotive,Casual,AutoPro,155.37,28,A,Y
+AU-1078,Automotive Product 4,Automotive,Premium,AutoPro,152.17,20,A,Z
+AU-1079,Automotive Product 5,Automotive,Premium,AutoPro,195.48,28,A,Y
+AU-1080,Automotive Product 6,Automotive,Standard,AutoPro,45.94,13,A,Z
+AU-1081,Automotive Product 7,Automotive,Budget,AutoPro,172.94,10,A,Y
+AU-1082,Automotive Product 8,Automotive,Standard,AutoPro,110.58,24,A,Y
+AU-1083,Automotive Product 9,Automotive,Premium,AutoPro,87.42,26,B,X
+AU-1084,Automotive Product 10,Automotive,Professional,AutoPro,204.74,8,A,X
+AU-1085,Automotive Product 11,Automotive,Professional,AutoPro,142.82,22,A,Y
+AU-1086,Automotive Product 12,Automotive,Standard,AutoPro,58.76,14,A,Y
+AU-1087,Automotive Product 13,Automotive,Budget,AutoPro,272.71,20,A,Y
+AU-1088,Automotive Product 14,Automotive,Budget,AutoPro,204.73,31,A,Y
+AU-1089,Automotive Product 15,Automotive,Standard,AutoPro,217.66,23,A,X
