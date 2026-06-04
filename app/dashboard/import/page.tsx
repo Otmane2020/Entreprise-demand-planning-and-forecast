@@ -209,10 +209,22 @@ export default function ImportPage() {
           <Upload className={cn('w-10 h-10 mx-auto mb-4', dragging ? 'text-primary' : 'text-muted-foreground')} />
           <h3 className="text-base font-semibold mb-2">Drop your file here</h3>
           <p className="text-sm text-muted-foreground mb-4">Supports CSV, XLSX, XLS — up to 100MB</p>
-          <label>
-            <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileInput} />
-            <Button variant="outline" className="cursor-pointer">Browse Files</Button>
-          </label>
+          <div>
+            <input
+              id="csv-file-input"
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              className="hidden"
+              onChange={handleFileInput}
+            />
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => document.getElementById('csv-file-input')?.click()}
+            >
+              Browse Files
+            </Button>
+          </div>
 
           <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-xl mx-auto">
             {EXPECTED_COLUMNS.map(col => (
